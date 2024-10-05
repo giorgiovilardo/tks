@@ -1,13 +1,18 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/giorgiovilardo/tksgo/internal"
 )
+
+//go:embed assets
+var embeddedFiles embed.FS
 
 func main() {
 	conf := internal.LoadConf()
@@ -23,11 +28,23 @@ func main() {
 	}
 
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.GET("/all_teams", internal.TeamsHandler(matches))
-	e.GET("/last_goals", internal.LastGoalsHandler(matches))
-	e.Logger.Fatal(e.Start(":1323"))
 
+	// Serve embedded files
+	assetHandler := echo.WrapHandler(http.FileServer(getFileSystem()))
+	e.GET("/", assetHandler)
+	e.GET("/*", assetHandler)
+
+	e.GET("/all_teams_json", internal.TeamsHandler(matches))
+	e.GET("/all_teams", internal.TeamsHtmlHandler(matches))
+	e.GET("/last_goals_json", internal.LastGoalsHandler(matches))
+	e.GET("/last_goals", internal.LastGoalsHtmlHandler(matches))
+	e.Logger.Fatal(e.Start(":1323"))
+}
+
+func getFileSystem() http.FileSystem {
+	fsys, err := fs.Sub(embeddedFiles, "assets")
+	if err != nil {
+		panic(err)
+	}
+	return http.FS(fsys)
 }

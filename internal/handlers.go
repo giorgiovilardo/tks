@@ -10,16 +10,17 @@ import (
 	"github.com/samber/lo"
 )
 
-func LastGoalsHandler(matches []Match) func(c echo.Context) error {
-	type lastGoalsRequest struct {
-		Team  string `query:"team"`
-		Where string `query:"where"`
-		Count int    `query:"count"`
-	}
-	type lastGoals struct {
-		Team  string `json:"team"`
-		Goals int    `json:"goals"`
-	}
+type lastGoalsRequest struct {
+	Team  string `query:"team"`
+	Where string `query:"where"`
+	Count int    `query:"count"`
+}
+type lastGoals struct {
+	Team  string `json:"team"`
+	Goals int    `json:"goals"`
+}
+
+func lastGoalsService(matches []Match, req lastGoalsRequest) lastGoals {
 	normalizedMatches := lo.Map(matches, func(match Match, _ int) Match {
 		return Match{
 			League:    match.League,
@@ -33,45 +34,59 @@ func LastGoalsHandler(matches []Match) func(c echo.Context) error {
 	slices.SortFunc(normalizedMatches, func(a, b Match) int {
 		return a.MatchDate.Compare(b.MatchDate)
 	})
+	matchesToCheck := make([]Match, 0)
+	if req.Where == "home" {
+		matchesToCheck = lo.Filter(normalizedMatches, func(match Match, _ int) bool {
+			return match.HomeTeam == req.Team
+		})
+	} else if req.Where == "away" {
+		matchesToCheck = lo.Filter(normalizedMatches, func(match Match, _ int) bool {
+			return match.AwayTeam == req.Team
+		})
+	}
+	slices.Reverse(matchesToCheck)
+	matchesToCheck = lo.Slice(matchesToCheck, 0, req.Count)
+	goals := lo.Sum(lo.Map(matchesToCheck, func(match Match, _ int) int {
+		if req.Where == "home" {
+			return match.HomeGoals
+		}
+		return match.AwayGoals
+	}))
+
+	return lastGoals{Team: req.Team, Goals: goals}
+}
+
+func LastGoalsHandler(matches []Match) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		req := lastGoalsRequest{}
 		if err := c.Bind(&req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		matchesToCheck := make([]Match, 0)
-		if req.Where == "home" {
-			matchesToCheck = lo.Filter(normalizedMatches, func(match Match, _ int) bool {
-				return match.HomeTeam == req.Team
-			})
-		} else if req.Where == "away" {
-			matchesToCheck = lo.Filter(normalizedMatches, func(match Match, _ int) bool {
-				return match.AwayTeam == req.Team
-			})
-		}
-
-		slices.Reverse(matchesToCheck)
-		matchesToCheck = lo.Slice(matchesToCheck, 0, req.Count)
-		goals := lo.Sum(lo.Map(matchesToCheck, func(match Match, _ int) int {
-			if req.Where == "home" {
-				return match.HomeGoals
-			}
-			return match.AwayGoals
-		}))
-
-		fmt.Printf("Matches to check for team %s playing %s, %d count: %d matches - %+v\n", req.Team, req.Where, req.Count, len(matchesToCheck), matchesToCheck)
-
-		return c.JSON(http.StatusOK, lastGoals{Team: req.Team, Goals: goals})
+		return c.JSON(http.StatusOK, lastGoalsService(matches, req))
 	}
 }
 
-func TeamsHandler(matches []Match) func(c echo.Context) error {
-	type teamCoso struct {
-		Name      string `json:"name"`
-		ShortName string `json:"short_name"`
+func LastGoalsHtmlHandler(matches []Match) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		req := lastGoalsRequest{}
+		if err := c.Bind(&req); err != nil {
+			return c.JSON(http.StatusBadRequest, err.Error())
+		}
+		result := lastGoalsService(matches, req)
+		return c.HTML(http.StatusOK, fmt.Sprintf("%d", result.Goals))
 	}
-	type teamsResponse struct {
-		AllTeams []teamCoso `json:"all_teams"`
-	}
+}
+
+type teamResponse struct {
+	Name      string `json:"name"`
+	ShortName string `json:"short_name"`
+}
+
+type teamsResponse struct {
+	AllTeams []teamResponse `json:"all_teams"`
+}
+
+func teamsService(matches []Match) teamsResponse {
 	allTeams := make([]string, 0)
 	for _, match := range matches {
 		allTeams = append(allTeams, match.HomeTeam)
@@ -81,10 +96,26 @@ func TeamsHandler(matches []Match) func(c echo.Context) error {
 		return strings.Compare(NormalizeName(a), NormalizeName(b))
 	})
 	allTeams = lo.Uniq(allTeams)
-	allTeamsStruct := lo.Map(allTeams, func(team string, _ int) teamCoso {
-		return teamCoso{Name: team, ShortName: NormalizeName(team)}
+	allTeamsStruct := lo.Map(allTeams, func(team string, _ int) teamResponse {
+		return teamResponse{Name: team, ShortName: NormalizeName(team)}
 	})
+	return teamsResponse{AllTeams: allTeamsStruct}
+}
+
+func TeamsHandler(matches []Match) func(c echo.Context) error {
 	return func(c echo.Context) error {
-		return c.JSON(http.StatusOK, teamsResponse{AllTeams: allTeamsStruct})
+		return c.JSON(http.StatusOK, teamsService(matches))
+	}
+}
+
+func TeamsHtmlHandler(matches []Match) func(c echo.Context) error {
+	html := "<option value=\"%s\">%s</option>"
+	return func(c echo.Context) error {
+		result := teamsService(matches)
+		htmlOptions := "<option value=\"\">Select Home Team</option>"
+		for _, team := range result.AllTeams {
+			htmlOptions += fmt.Sprintf(html, team.ShortName, team.Name)
+		}
+		return c.HTML(http.StatusOK, htmlOptions)
 	}
 }
