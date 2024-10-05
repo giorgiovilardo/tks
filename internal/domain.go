@@ -25,8 +25,10 @@ type Match struct {
 }
 
 func (m Match) IdempotentKey() string {
-	normalize := func(name string) string {
-		return strings.ToLower(strings.ReplaceAll(name, " ", ""))
-	}
-	return fmt.Sprintf("%s-%s-%s", normalize(m.HomeTeam), normalize(m.AwayTeam), m.MatchDate.Format(time.RFC3339))
+	return fmt.Sprintf("%s-%s-%s", NormalizeName(m.HomeTeam), NormalizeName(m.AwayTeam), m.MatchDate.Format(time.RFC3339))
+}
+
+// NormalizeName removes all spaces and converts to lowercase
+func NormalizeName(name string) string {
+	return strings.ToLower(strings.ReplaceAll(name, " ", ""))
 }
