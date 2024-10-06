@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <script src="/htmx.min.js"></script>
     <script src="/tailwind.js"></script>
 </head>
+
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto p-8">
         <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">Trekin's Key Statistics</h1>
@@ -14,32 +16,55 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label for="home-team-select" class="block mb-2 font-semibold text-gray-700">Home Team</label>
-                    <select id="home-team-select" name="home-team-select" class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300" hx-get="/all_teams" hx-trigger="load" hx-target="#home-team-select" hx-swap="innerHTML">
+                    <select id="home-team-select" name="home-team-select"
+                        class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300"
+                        hx-get="/all_teams" hx-trigger="load" hx-target="#home-team-select" hx-swap="innerHTML">
                         <option value="">Select Home Team</option>
                     </select>
                 </div>
                 <div>
-                    <label for="last-matches-count" class="block mb-2 font-semibold text-gray-700">Last Matches Count</label>
-                    <input type="number" id="last-matches-count" name="last-matches-count" class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300" value="5" min="1">
+                    <label for="last-matches-count" class="block mb-2 font-semibold text-gray-700">Last Matches
+                        Count</label>
+                    <input type="number" id="last-matches-count" name="last-matches-count"
+                        class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300"
+                        value="5" min="1">
                 </div>
                 <div>
                     <label for="away-team-select" class="block mb-2 font-semibold text-gray-700">Away Team</label>
-                    <select id="away-team-select" name="away-team-select" class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300" hx-get="/all_teams" hx-trigger="load" hx-target="#away-team-select" hx-swap="innerHTML">
+                    <select id="away-team-select" name="away-team-select"
+                        class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300"
+                        hx-get="/all_teams" hx-trigger="load" hx-target="#away-team-select" hx-swap="innerHTML">
                         <option value="">Select Away Team</option>
                     </select>
                 </div>
             </div>
             <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="p-4 border rounded-md bg-blue-50">
-                    <h2 class="text-xl font-semibold mb-2 text-blue-800">Home Team Goals</h2>
-                    <div id="home-team-goals" class="text-3xl font-bold text-blue-600">
-                        <!-- Goals will be fetched here -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 border rounded-md bg-blue-50">
+                        <h2 class="text-xl font-semibold mb-2 text-blue-800">Home Team Scored</h2>
+                        <div id="home-team-scored" class="text-3xl font-bold text-blue-600">
+                            <!-- Goals scored by home team will be fetched here -->
+                        </div>
+                    </div>
+                    <div class="p-4 border rounded-md bg-red-50">
+                        <h2 class="text-xl font-semibold mb-2 text-red-800">Home Team Conceded</h2>
+                        <div id="home-team-conceded" class="text-3xl font-bold text-red-600">
+                            <!-- Goals conceded by home team will be fetched here -->
+                        </div>
                     </div>
                 </div>
-                <div class="p-4 border rounded-md bg-green-50">
-                    <h2 class="text-xl font-semibold mb-2 text-green-800">Away Team Goals</h2>
-                    <div id="away-team-goals" class="text-3xl font-bold text-green-600">
-                        <!-- Goals will be fetched here -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 border rounded-md bg-green-50">
+                        <h2 class="text-xl font-semibold mb-2 text-green-800">Away Team Scored</h2>
+                        <div id="away-team-scored" class="text-3xl font-bold text-green-600">
+                            <!-- Goals scored by away team will be fetched here -->
+                        </div>
+                    </div>
+                    <div class="p-4 border rounded-md bg-yellow-50">
+                        <h2 class="text-xl font-semibold mb-2 text-yellow-800">Away Team Conceded</h2>
+                        <div id="away-team-conceded" class="text-3xl font-bold text-yellow-600">
+                            <!-- Goals conceded by away team will be fetched here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -54,10 +79,13 @@
 
             function updateGoals(team, where) {
                 const count = lastMatchesCount.value;
-                const url = `/last_goals?count=${count}&team=${team}&where=${where}`;
-                const targetId = `${where}-team-goals`;
+                const scoredUrl = `/last_goals?count=${count}&team=${team}&where=${where}&type=scored`;
+                const concededUrl = `/last_goals?count=${count}&team=${team}&where=${where}&type=conceded`;
+                const scoredTargetId = `${where}-team-scored`;
+                const concededTargetId = `${where}-team-conceded`;
 
-                htmx.ajax('GET', url, `#${targetId}`);
+                htmx.ajax('GET', scoredUrl, `#${scoredTargetId}`);
+                htmx.ajax('GET', concededUrl, `#${concededTargetId}`);
             }
 
             homeTeamSelect.addEventListener('change', function () {
@@ -79,4 +107,5 @@
         });
     </script>
 </body>
+
 </html>

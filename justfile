@@ -8,12 +8,7 @@ test-race:
     go test -race ./...
 
 build-windows:
-    GOOS=windows GOARCH=amd64 go build -o out/tksgo.exe ./tks
-
-build-mac:
-    GOOS=darwin GOARCH=amd64 go build -o out/tksgo ./tks
-
-build-all: build-windows build-mac
+    GOOS=windows GOARCH=amd64 go build -o out/tks.exe ./tks
 
 run:
     go run ./tks

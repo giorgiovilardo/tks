@@ -14,10 +14,12 @@ type lastGoalsRequest struct {
 	Team  string `query:"team"`
 	Where string `query:"where"`
 	Count int    `query:"count"`
+	Type  string `query:"type"`
 }
 type lastGoals struct {
-	Team  string `json:"team"`
-	Goals int    `json:"goals"`
+	Team      string `json:"team"`
+	HomeGoals int    `json:"home_goals"`
+	AwayGoals int    `json:"away_goals"`
 }
 
 func lastGoalsService(matches []Match, req lastGoalsRequest) lastGoals {
@@ -46,14 +48,20 @@ func lastGoalsService(matches []Match, req lastGoalsRequest) lastGoals {
 	}
 	slices.Reverse(matchesToCheck)
 	matchesToCheck = lo.Slice(matchesToCheck, 0, req.Count)
-	goals := lo.Sum(lo.Map(matchesToCheck, func(match Match, _ int) int {
+	homeGoals := lo.Sum(lo.Map(matchesToCheck, func(match Match, _ int) int {
 		if req.Where == "home" {
 			return match.HomeGoals
 		}
 		return match.AwayGoals
 	}))
+	awayGoals := lo.Sum(lo.Map(matchesToCheck, func(match Match, _ int) int {
+		if req.Where == "home" {
+			return match.AwayGoals
+		}
+		return match.HomeGoals
+	}))
 
-	return lastGoals{Team: req.Team, Goals: goals}
+	return lastGoals{Team: req.Team, HomeGoals: homeGoals, AwayGoals: awayGoals}
 }
 
 func LastGoalsHandler(matches []Match) func(c echo.Context) error {
@@ -73,7 +81,10 @@ func LastGoalsHtmlHandler(matches []Match) func(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
 		result := lastGoalsService(matches, req)
-		return c.HTML(http.StatusOK, fmt.Sprintf("%d", result.Goals))
+		if req.Type == "scored" {
+			return c.HTML(http.StatusOK, fmt.Sprintf("%d", result.HomeGoals))
+		}
+		return c.HTML(http.StatusOK, fmt.Sprintf("%d", result.AwayGoals))
 	}
 }
 
