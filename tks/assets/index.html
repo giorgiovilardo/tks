@@ -82,6 +82,32 @@
                     </div>
                 </div>
             </div>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="p-4 border rounded-md bg-purple-50">
+                    <h2 class="text-xl font-semibold mb-2 text-purple-800">GFC</h2>
+                    <div id="gfc" class="text-3xl font-bold text-purple-600">
+                        <!-- GFC will be fetched here -->
+                    </div>
+                </div>
+                <div class="p-4 border rounded-md bg-indigo-50">
+                    <h2 class="text-xl font-semibold mb-2 text-indigo-800">GSC</h2>
+                    <div id="gsc" class="text-3xl font-bold text-indigo-600">
+                        <!-- GSC will be fetched here -->
+                    </div>
+                </div>
+                <div class="p-4 border rounded-md bg-teal-50">
+                    <h2 class="text-xl font-semibold mb-2 text-teal-800">GFT</h2>
+                    <div id="gft" class="text-3xl font-bold text-teal-600">
+                        <!-- GFT will be fetched here -->
+                    </div>
+                </div>
+                <div class="p-4 border rounded-md bg-pink-50">
+                    <h2 class="text-xl font-semibold mb-2 text-pink-800">GST</h2>
+                    <div id="gst" class="text-3xl font-bold text-pink-600">
+                        <!-- GST will be fetched here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -100,6 +126,28 @@
 
                 htmx.ajax('GET', scoredUrl, `#${scoredTargetId}`);
                 htmx.ajax('GET', concededUrl, `#${concededTargetId}`);
+
+                fetch(scoredUrl)
+                    .then(response => response.text())
+                    .then(data => {
+                        const media_gol_segnati = Number(data) / count;
+                        if (where === 'home') {
+                            document.getElementById('gfc').innerText = media_gol_segnati.toFixed(2);
+                        } else {
+                            document.getElementById('gft').innerText = media_gol_segnati.toFixed(2);
+                        }
+                    });
+
+                fetch(concededUrl)
+                    .then(response => response.text())
+                    .then(data => {
+                        const media_gol_subiti = Number(data) / count;
+                        if (where === 'home') {
+                            document.getElementById('gsc').innerText = media_gol_subiti.toFixed(2);
+                        } else {
+                            document.getElementById('gst').innerText = media_gol_subiti.toFixed(2);
+                        }
+                    });
             }
 
             function updateLastMatches(team, where) {
