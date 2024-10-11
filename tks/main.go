@@ -39,6 +39,7 @@ func main() {
 	e.GET("/all_teams", internal.TeamsHtmlHandler(matches))
 	e.GET("/last_goals_json", internal.LastGoalsHandler(matches))
 	e.GET("/last_goals", internal.LastGoalsHtmlHandler(matches))
+	e.GET("/last_matches_json", internal.LastMatchesHandler(matches))
 
 	go func() {
 		url := "http://localhost:1323"

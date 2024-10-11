@@ -16,12 +16,12 @@ type League struct {
 }
 
 type Match struct {
-	League    string
-	HomeTeam  string
-	AwayTeam  string
-	HomeGoals int
-	AwayGoals int
-	MatchDate time.Time
+	League    string    `json:"league"`
+	HomeTeam  string    `json:"home_team"`
+	AwayTeam  string    `json:"away_team"`
+	HomeGoals int       `json:"home_goals"`
+	AwayGoals int       `json:"away_goals"`
+	MatchDate time.Time `json:"match_date"`
 }
 
 func (m Match) IdempotentKey() string {

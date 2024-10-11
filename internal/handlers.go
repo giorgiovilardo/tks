@@ -130,3 +130,48 @@ func TeamsHtmlHandler(matches []Match) func(c echo.Context) error {
 		return c.HTML(http.StatusOK, htmlOptions)
 	}
 }
+
+type lastMatchesRequest struct {
+	Team  string `query:"team"`
+	Count int    `query:"count"`
+	Where string `query:"where"`
+}
+
+// lastMatchesService returns the last `count` matches for the given team and location (home or away)
+func lastMatchesService(matches []Match, req lastMatchesRequest) []Match {
+	normalizedMatches := lo.Map(matches, func(match Match, _ int) Match {
+		return Match{
+			League:    match.League,
+			HomeTeam:  NormalizeName(match.HomeTeam),
+			AwayTeam:  NormalizeName(match.AwayTeam),
+			HomeGoals: match.HomeGoals,
+			AwayGoals: match.AwayGoals,
+			MatchDate: match.MatchDate,
+		}
+	})
+	slices.SortFunc(normalizedMatches, func(a, b Match) int {
+		return a.MatchDate.Compare(b.MatchDate) * -1
+	})
+	matchesToCheck := make([]Match, 0)
+	if req.Where == "home" {
+		matchesToCheck = lo.Filter(normalizedMatches, func(match Match, _ int) bool {
+			return match.HomeTeam == req.Team
+		})
+	} else if req.Where == "away" {
+		matchesToCheck = lo.Filter(normalizedMatches, func(match Match, _ int) bool {
+			return match.AwayTeam == req.Team
+		})
+	}
+	return lo.Slice(matchesToCheck, 0, req.Count)
+}
+
+func LastMatchesHandler(matches []Match) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		req := lastMatchesRequest{}
+		if err := c.Bind(&req); err != nil {
+			return c.JSON(http.StatusBadRequest, err.Error())
+		}
+
+		return c.JSON(http.StatusOK, lastMatchesService(matches, req))
+	}
+}

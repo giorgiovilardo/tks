@@ -68,6 +68,20 @@
                     </div>
                 </div>
             </div>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-4 border rounded-md bg-gray-50">
+                    <h2 class="text-xl font-semibold mb-2 text-gray-800">Last Matches Home</h2>
+                    <div id="last-matches-home" class="text-lg">
+                        <!-- Last matches for home team will be fetched here -->
+                    </div>
+                </div>
+                <div class="p-4 border rounded-md bg-gray-50">
+                    <h2 class="text-xl font-semibold mb-2 text-gray-800">Last Matches Away</h2>
+                    <div id="last-matches-away" class="text-lg">
+                        <!-- Last matches for away team will be fetched here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -88,20 +102,47 @@
                 htmx.ajax('GET', concededUrl, `#${concededTargetId}`);
             }
 
+            function updateLastMatches(team, where) {
+                const count = lastMatchesCount.value;
+                const url = `/last_matches_json?count=${count}&team=${team}&where=${where}`;
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const targetId = `last-matches-${where}`;
+                        const targetElement = document.getElementById(targetId);
+                        targetElement.innerHTML = '';
+                        data.forEach(match => {
+                            const matchDate = new Date(match.match_date);
+                            const formattedDate = `${matchDate.getDate().toString().padStart(2, '0')}/${(matchDate.getMonth() + 1).toString().padStart(2, '0')}/${matchDate.getFullYear()} ${matchDate.getHours().toString().padStart(2, '0')}:${matchDate.getMinutes().toString().padStart(2, '0')}`;
+                            const homeTeam = match.home_team.charAt(0).toUpperCase() + match.home_team.slice(1);
+                            const awayTeam = match.away_team.charAt(0).toUpperCase() + match.away_team.slice(1);
+                            const matchResult = `${homeTeam} ${match.home_goals} - ${match.away_goals} ${awayTeam} ${formattedDate}`;
+                            const matchElement = document.createElement('div');
+                            matchElement.textContent = matchResult;
+                            matchElement.className = 'mb-2';
+                            targetElement.appendChild(matchElement);
+                        });
+                    });
+            }
+
             homeTeamSelect.addEventListener('change', function () {
                 updateGoals(this.value, 'home');
+                updateLastMatches(this.value, 'home');
             });
 
             awayTeamSelect.addEventListener('change', function () {
                 updateGoals(this.value, 'away');
+                updateLastMatches(this.value, 'away');
             });
 
             lastMatchesCount.addEventListener('change', function () {
                 if (homeTeamSelect.value) {
                     updateGoals(homeTeamSelect.value, 'home');
+                    updateLastMatches(homeTeamSelect.value, 'home');
                 }
                 if (awayTeamSelect.value) {
                     updateGoals(awayTeamSelect.value, 'away');
+                    updateLastMatches(awayTeamSelect.value, 'away');
                 }
             });
         });
