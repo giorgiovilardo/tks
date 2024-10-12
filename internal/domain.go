@@ -32,3 +32,8 @@ func (m Match) IdempotentKey() string {
 func NormalizeName(name string) string {
 	return strings.ToLower(strings.ReplaceAll(name, " ", ""))
 }
+
+// AsOdds returns the probability in odd style
+func AsOdds(value float64) float64 {
+	return 1 / value
+}

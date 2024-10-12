@@ -11,7 +11,6 @@
 
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto p-8">
-        <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">Trekin's Key Statistics</h1>
         <div class="bg-white shadow-md rounded-lg p-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -23,8 +22,8 @@
                     </select>
                 </div>
                 <div>
-                    <label for="last-matches-count" class="block mb-2 font-semibold text-gray-700">Last Matches
-                        Count</label>
+                    <label for="last-matches-count" class="block mb-2 font-semibold text-gray-700">Min Last
+                        Matches</label>
                     <input type="number" id="last-matches-count" name="last-matches-count"
                         class="w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300"
                         value="5" min="1">
@@ -70,14 +69,16 @@
             </div>
             <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="p-4 border rounded-md bg-gray-50">
-                    <h2 class="text-xl font-semibold mb-2 text-gray-800">Last Matches Home</h2>
-                    <div id="last-matches-home" class="text-lg">
+                    <h2 id="last-matches-home-title" class="text-xl font-semibold mb-2 text-gray-800">Last Matches Home
+                    </h2>
+                    <div id="last-matches-home" class="text-lg grid grid-cols-[1fr,auto,1fr,auto] gap-x-2">
                         <!-- Last matches for home team will be fetched here -->
                     </div>
                 </div>
                 <div class="p-4 border rounded-md bg-gray-50">
-                    <h2 class="text-xl font-semibold mb-2 text-gray-800">Last Matches Away</h2>
-                    <div id="last-matches-away" class="text-lg">
+                    <h2 id="last-matches-away-title" class="text-xl font-semibold mb-2 text-gray-800">Last Matches Away
+                    </h2>
+                    <div id="last-matches-away" class="text-lg grid grid-cols-[1fr,auto,1fr,auto] gap-x-2">
                         <!-- Last matches for away team will be fetched here -->
                     </div>
                 </div>
@@ -117,8 +118,7 @@
             const awayTeamSelect = document.getElementById('away-team-select');
             const lastMatchesCount = document.getElementById('last-matches-count');
 
-            function updateGoals(team, where) {
-                const count = lastMatchesCount.value;
+            function updateGoals(team, where, count) {
                 const scoredUrl = `/last_goals?count=${count}&team=${team}&where=${where}&type=scored`;
                 const concededUrl = `/last_goals?count=${count}&team=${team}&where=${where}&type=conceded`;
                 const scoredTargetId = `${where}-team-scored`;
@@ -151,11 +151,12 @@
             }
 
             function updateLastMatches(team, where) {
-                const count = lastMatchesCount.value;
+                const count = parseInt(lastMatchesCount.value);
                 const url = `/last_matches_json?count=${count}&team=${team}&where=${where}`;
                 fetch(url)
                     .then(response => response.json())
                     .then(data => {
+                        const totalMatches = data.length;
                         const targetId = `last-matches-${where}`;
                         const targetElement = document.getElementById(targetId);
                         targetElement.innerHTML = '';
@@ -164,32 +165,49 @@
                             const formattedDate = `${matchDate.getDate().toString().padStart(2, '0')}/${(matchDate.getMonth() + 1).toString().padStart(2, '0')}/${matchDate.getFullYear()} ${matchDate.getHours().toString().padStart(2, '0')}:${matchDate.getMinutes().toString().padStart(2, '0')}`;
                             const homeTeam = match.home_team.charAt(0).toUpperCase() + match.home_team.slice(1);
                             const awayTeam = match.away_team.charAt(0).toUpperCase() + match.away_team.slice(1);
-                            const matchResult = `${homeTeam} ${match.home_goals} - ${match.away_goals} ${awayTeam} ${formattedDate}`;
-                            const matchElement = document.createElement('div');
-                            matchElement.textContent = matchResult;
-                            matchElement.className = 'mb-2';
-                            targetElement.appendChild(matchElement);
+
+                            const homeTeamElement = document.createElement('div');
+                            homeTeamElement.textContent = homeTeam;
+                            homeTeamElement.className = 'text-right';
+
+                            const scoreElement = document.createElement('div');
+                            scoreElement.textContent = `${match.home_goals} - ${match.away_goals}`;
+                            scoreElement.className = 'font-bold';
+
+                            const awayTeamElement = document.createElement('div');
+                            awayTeamElement.textContent = awayTeam;
+
+                            const dateElement = document.createElement('div');
+                            dateElement.textContent = formattedDate;
+                            dateElement.className = 'text-sm text-gray-500';
+
+                            targetElement.appendChild(homeTeamElement);
+                            targetElement.appendChild(scoreElement);
+                            targetElement.appendChild(awayTeamElement);
+                            targetElement.appendChild(dateElement);
                         });
+
+                        const titleElement = document.getElementById(`last-matches-${where}-title`);
+                        const originalTitle = titleElement.innerText.split('(')[0].trim();
+                        titleElement.innerText = `${originalTitle} (${totalMatches})`;
+
+                        updateGoals(team, where, totalMatches);
                     });
             }
 
             homeTeamSelect.addEventListener('change', function () {
-                updateGoals(this.value, 'home');
                 updateLastMatches(this.value, 'home');
             });
 
             awayTeamSelect.addEventListener('change', function () {
-                updateGoals(this.value, 'away');
                 updateLastMatches(this.value, 'away');
             });
 
             lastMatchesCount.addEventListener('change', function () {
                 if (homeTeamSelect.value) {
-                    updateGoals(homeTeamSelect.value, 'home');
                     updateLastMatches(homeTeamSelect.value, 'home');
                 }
                 if (awayTeamSelect.value) {
-                    updateGoals(awayTeamSelect.value, 'away');
                     updateLastMatches(awayTeamSelect.value, 'away');
                 }
             });
