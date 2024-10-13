@@ -18,11 +18,6 @@ var embeddedFiles embed.FS
 
 func main() {
 	conf := internal.LoadConf()
-	// fmt.Println("Loaded configuration:")
-	// fmt.Printf("%+v\n", conf)
-	// for _, league := range conf.Leagues {
-	// 	fmt.Printf("%s URL: %s\n", league.Name, league.URL)
-	// }
 	matches, err := internal.GetMatchesFromCsv(conf)
 	if err != nil {
 		fmt.Println("Error downloading CSV files:", err)
@@ -40,6 +35,7 @@ func main() {
 	e.GET("/last_goals_json", internal.LastGoalsHandler(matches))
 	e.GET("/last_goals", internal.LastGoalsHtmlHandler(matches))
 	e.GET("/last_matches_json", internal.LastMatchesHandler(matches))
+	e.GET("/result_matrix", internal.ResultMatrixHandler)
 
 	go func() {
 		url := "http://localhost:1323"

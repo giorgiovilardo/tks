@@ -109,6 +109,14 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Add this new section after the existing grid sections -->
+            <div id="databox" class="mt-8 p-4 border rounded-md bg-gray-50">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Result Matrix</h2>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4" id="result-matrix-data">
+                    <!-- Result matrix data will be populated here -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -117,6 +125,10 @@
             const homeTeamSelect = document.getElementById('home-team-select');
             const awayTeamSelect = document.getElementById('away-team-select');
             const lastMatchesCount = document.getElementById('last-matches-count');
+            const gfc = document.getElementById('gfc');
+            const gsc = document.getElementById('gsc');
+            const gft = document.getElementById('gft');
+            const gst = document.getElementById('gst');
 
             function updateGoals(team, where, count) {
                 const scoredUrl = `/last_goals?count=${count}&team=${team}&where=${where}&type=scored`;
@@ -132,10 +144,11 @@
                     .then(data => {
                         const media_gol_segnati = Number(data) / count;
                         if (where === 'home') {
-                            document.getElementById('gfc').innerText = media_gol_segnati.toFixed(2);
+                            gfc.innerText = media_gol_segnati.toFixed(2);
                         } else {
-                            document.getElementById('gft').innerText = media_gol_segnati.toFixed(2);
+                            gft.innerText = media_gol_segnati.toFixed(2);
                         }
+                        checkAndUpdateResultMatrix();
                     });
 
                 fetch(concededUrl)
@@ -143,10 +156,11 @@
                     .then(data => {
                         const media_gol_subiti = Number(data) / count;
                         if (where === 'home') {
-                            document.getElementById('gsc').innerText = media_gol_subiti.toFixed(2);
+                            gsc.innerText = media_gol_subiti.toFixed(2);
                         } else {
-                            document.getElementById('gst').innerText = media_gol_subiti.toFixed(2);
+                            gst.innerText = media_gol_subiti.toFixed(2);
                         }
+                        checkAndUpdateResultMatrix();
                     });
             }
 
@@ -193,6 +207,51 @@
 
                         updateGoals(team, where, totalMatches);
                     });
+            }
+
+            function checkAndUpdateResultMatrix() {
+                if (gfc.innerText && gsc.innerText && gft.innerText && gst.innerText) {
+                    updateResultMatrix();
+                }
+            }
+
+            function updateResultMatrix() {
+                const homeTeam = homeTeamSelect.value;
+                const awayTeam = awayTeamSelect.value;
+
+                if (homeTeam && awayTeam) {
+                    const gfcValue = parseFloat(gfc.innerText) || 0;
+                    const gscValue = parseFloat(gsc.innerText) || 0;
+                    const gftValue = parseFloat(gft.innerText) || 0;
+                    const gstValue = parseFloat(gst.innerText) || 0;
+
+                    const homeMatchCount = parseInt(document.getElementById('last-matches-home-title').innerText.match(/\((\d+)\)/)[1]) || 0;
+                    const awayMatchCount = parseInt(document.getElementById('last-matches-away-title').innerText.match(/\((\d+)\)/)[1]) || 0;
+
+                    if (homeMatchCount === 0 || awayMatchCount === 0) {
+                        return; // Don't update if either team's data is not loaded yet
+                    }
+
+                    const url = `/result_matrix?match_count_home=${homeMatchCount}&match_count_away=${awayMatchCount}&home_scored=${Math.round(gfcValue * homeMatchCount)}&home_conceded=${Math.round(gscValue * homeMatchCount)}&away_scored=${Math.round(gftValue * awayMatchCount)}&away_conceded=${Math.round(gstValue * awayMatchCount)}`;
+
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            const resultMatrixData = document.getElementById('result-matrix-data');
+                            resultMatrixData.innerHTML = '';
+
+                            for (const [key, value] of Object.entries(data.result_matrix)) {
+                                const div = document.createElement('div');
+                                div.className = 'p-2 border rounded-md text-right';
+                                div.innerHTML = `
+                                    <h3 class="font-semibold">${key.replace(/_/g, ' ').toUpperCase()}</h3>
+                                    <p>Prob: <span class="font-mono font-bold">${value.probability.toFixed(4)}</span></p>
+                                    <p>Odds: <span class="font-mono font-bold">${value.odds.toFixed(4)}</span></p>
+                                `;
+                                resultMatrixData.appendChild(div);
+                            }
+                        });
+                }
             }
 
             homeTeamSelect.addEventListener('change', function () {
