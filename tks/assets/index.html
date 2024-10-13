@@ -148,29 +148,23 @@
                 htmx.ajax('GET', scoredUrl, `#${scoredTargetId}`);
                 htmx.ajax('GET', concededUrl, `#${concededTargetId}`);
 
-                fetch(scoredUrl)
-                    .then(response => response.text())
-                    .then(data => {
-                        const media_gol_segnati = Number(data) / count;
-                        if (where === 'home') {
-                            gfc.innerText = media_gol_segnati.toFixed(2);
-                        } else {
-                            gft.innerText = media_gol_segnati.toFixed(2);
-                        }
-                        checkAndUpdateResultMatrix();
-                    });
+                Promise.all([
+                    fetch(scoredUrl).then(response => response.text()),
+                    fetch(concededUrl).then(response => response.text())
+                ]).then(([scoredData, concededData]) => {
+                    const media_gol_segnati = Number(scoredData) / count;
+                    const media_gol_subiti = Number(concededData) / count;
 
-                fetch(concededUrl)
-                    .then(response => response.text())
-                    .then(data => {
-                        const media_gol_subiti = Number(data) / count;
-                        if (where === 'home') {
-                            gsc.innerText = media_gol_subiti.toFixed(2);
-                        } else {
-                            gst.innerText = media_gol_subiti.toFixed(2);
-                        }
-                        checkAndUpdateResultMatrix();
-                    });
+                    if (where === 'home') {
+                        gfc.innerText = media_gol_segnati.toFixed(2);
+                        gsc.innerText = media_gol_subiti.toFixed(2);
+                    } else {
+                        gft.innerText = media_gol_segnati.toFixed(2);
+                        gst.innerText = media_gol_subiti.toFixed(2);
+                    }
+
+                    checkAndUpdateResultMatrix();
+                });
             }
 
             function updateLastMatches(team, where) {
