@@ -112,7 +112,15 @@
 
             <!-- Add this new section after the existing grid sections -->
             <div id="databox" class="mt-8 p-4 border rounded-md bg-gray-50">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Result Matrix</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Result Matrix</h2>
+                    <div class="flex items-center">
+                        <label for="probability-threshold" class="mr-2 font-semibold text-gray-700">Highlight Threshold (%)</label>
+                        <input type="number" id="probability-threshold" name="probability-threshold"
+                            class="w-20 p-2 border rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300"
+                            value="70" min="1" max="99">
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-4" id="result-matrix-data">
                     <!-- Result matrix data will be populated here -->
                 </div>
@@ -129,6 +137,7 @@
             const gsc = document.getElementById('gsc');
             const gft = document.getElementById('gft');
             const gst = document.getElementById('gst');
+            const probabilityThreshold = document.getElementById('probability-threshold');
 
             function updateGoals(team, where, count) {
                 const scoredUrl = `/last_goals?count=${count}&team=${team}&where=${where}&type=scored`;
@@ -243,9 +252,13 @@
                             for (const [key, value] of Object.entries(data.result_matrix)) {
                                 const div = document.createElement('div');
                                 div.className = 'p-2 border rounded-md text-right';
+                                const probability = value.probability * 100;
+                                if (probability > parseFloat(probabilityThreshold.value)) {
+                                    div.classList.add('bg-green-100');
+                                }
                                 div.innerHTML = `
                                     <h3 class="font-semibold">${key.replace(/_/g, ' ').toUpperCase()}</h3>
-                                    <p><span class="font-mono">Prob:</span> <span class="font-mono font-bold">${(value.probability * 100).toFixed(2)}%</span></p>
+                                    <p><span class="font-mono">Prob:</span> <span class="font-mono font-bold">${probability.toFixed(2)}%</span></p>
                                     <p><span class="font-mono">Odds:</span> <span class="font-mono font-bold">${value.odds.toFixed(4)}</span></p>
                                 `;
                                 resultMatrixData.appendChild(div);
@@ -269,6 +282,10 @@
                 if (awayTeamSelect.value) {
                     updateLastMatches(awayTeamSelect.value, 'away');
                 }
+            });
+
+            probabilityThreshold.addEventListener('input', function () {
+                updateResultMatrix();
             });
         });
     </script>
