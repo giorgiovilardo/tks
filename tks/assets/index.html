@@ -245,8 +245,8 @@
                                 div.className = 'p-2 border rounded-md text-right';
                                 div.innerHTML = `
                                     <h3 class="font-semibold">${key.replace(/_/g, ' ').toUpperCase()}</h3>
-                                    <p>Prob: <span class="font-mono font-bold">${value.probability.toFixed(4)}</span></p>
-                                    <p>Odds: <span class="font-mono font-bold">${value.odds.toFixed(4)}</span></p>
+                                    <p><span class="font-mono">Prob:</span> <span class="font-mono font-bold">${(value.probability * 100).toFixed(2)}%</span></p>
+                                    <p><span class="font-mono">Odds:</span> <span class="font-mono font-bold">${value.odds.toFixed(4)}</span></p>
                                 `;
                                 resultMatrixData.appendChild(div);
                             }
